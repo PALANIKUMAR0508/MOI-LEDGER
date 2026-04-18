@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import AppLayout from '../components/AppLayout';
 import { API_URL } from '../context/AuthContext';
+import { useLang } from '../context/LangContext';
+import { transliterateToTamil, debounce } from '../utils/transliterate';
 import toast from 'react-hot-toast';
 
 const GOLD_TYPES = ['மோதிரம் (Ring)','வளையல் (Bangles)','தாலி (Chain)','கொலுசு (Anklet)','ஜிமிக்கி (Earring)','நகை செட் (Set)','தங்கக் காசு (Coin)','மூக்குத்தி (Nose ring)','Other Gold'];
@@ -96,12 +98,13 @@ function GiftTypeForm({ form, setForm }) {
   );
 }
 
-const EMPTY_FORM = { guestName:'', guestRelation:'', amount:'', giftType:'cash', giftDescription:'', notes:'' };
+const EMPTY_FORM = { guestName:'', guestNameTamil:'', guestNameEnglish:'', village:'', villageTamil:'', guestRelation:'', amount:'', giftType:'cash', giftDescription:'', notes:'' };
 const GIFT_ICON = { cash:'payments', gold:'diamond', gift:'card_giftcard', other:'category' };
 const GIFT_LABEL = { cash:'Cash', gold:'Gold', gift:'Gift', other:'Other' };
 
 export default function EntryWorkspace() {
   const { id } = useParams();
+  const { lang } = useLang();
   const [fn, setFn] = useState(null);
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -109,6 +112,32 @@ export default function EntryWorkspace() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editId, setEditId] = useState(null);
+
+  // Debounced transliteration function
+  const debouncedTransliterate = useCallback(
+    debounce(async (englishText) => {
+      if (englishText.trim()) {
+        const tamilText = await transliterateToTamil(englishText);
+        setForm(f => ({ ...f, guestNameTamil: tamilText }));
+      } else {
+        setForm(f => ({ ...f, guestNameTamil: '' }));
+      }
+    }, 500),
+    []
+  );
+
+  // Debounced transliteration for village
+  const debouncedTransliterateVillage = useCallback(
+    debounce(async (englishText) => {
+      if (englishText.trim()) {
+        const tamilText = await transliterateToTamil(englishText);
+        setForm(f => ({ ...f, villageTamil: tamilText }));
+      } else {
+        setForm(f => ({ ...f, villageTamil: '' }));
+      }
+    }, 500),
+    []
+  );
 
   const load = async () => {
     try {
@@ -125,23 +154,40 @@ export default function EntryWorkspace() {
 
   const openAdd = () => { setForm(EMPTY_FORM); setEditId(null); setShowForm(true); };
   const openEdit = (c) => {
-    setForm({ guestName: c.guestName, guestRelation: c.guestRelation||'', amount: c.amount, giftType: c.giftType, giftDescription: c.giftDescription||'', notes: c.notes||'' });
+    setForm({ 
+      guestName: c.guestName, 
+      guestNameTamil: c.guestNameTamil||'', 
+      guestNameEnglish: c.guestNameEnglish||'', 
+      village: c.village||'',
+      villageTamil: c.villageTamil||'',
+      guestRelation: c.guestRelation||'', 
+      amount: c.amount, 
+      giftType: c.giftType, 
+      giftDescription: c.giftDescription||'', 
+      notes: c.notes||'' 
+    });
     setEditId(c._id); setShowForm(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     const isGold = form.giftType === 'gold', isOther = form.giftType === 'other', isGift = form.giftType === 'gift';
-    if (!form.guestName) return toast.error('Guest name is required.');
+    if (!form.guestNameEnglish) return toast.error('Guest name is required.');
     if (form.giftType === 'cash' && !form.amount) return toast.error('Amount is required for cash.');
     if ((isGold || isGift || isOther) && !form.giftDescription) return toast.error('Please describe the contribution.');
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        guestName: form.guestNameEnglish,
+        functionId: id,
+        amount: Number(form.amount)||0
+      };
       if (editId) {
-        await axios.put(`${API_URL}/contributions/${editId}`, { ...form, functionId: id, amount: Number(form.amount)||0 });
+        await axios.put(`${API_URL}/contributions/${editId}`, payload);
         toast.success('Entry updated.');
       } else {
-        await axios.post(`${API_URL}/contributions`, { ...form, functionId: id, amount: Number(form.amount)||0 });
+        await axios.post(`${API_URL}/contributions`, payload);
         toast.success('Entry recorded to the ledger.');
       }
       setForm(EMPTY_FORM); setShowForm(false); setEditId(null); load();
@@ -213,22 +259,74 @@ export default function EntryWorkspace() {
               </div>
 
               <form onSubmit={handleSave} className="space-y-5">
-                {/* Guest Name + Relation */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                    <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Guest Name / விருந்தினர் பெயர் *</label>
-                    <input value={form.guestName} onChange={e=>setForm(f=>({...f,guestName:e.target.value}))} placeholder="Full name" required
-                      className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                {/* Guest Name + Village */}
+                <div className="space-y-4">
+                  {/* Guest Name - English and Tamil in one row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Guest Name (English) *</label>
+                      <input 
+                        value={form.guestNameEnglish} 
+                        onChange={e=>{
+                          const englishName = e.target.value;
+                          setForm(f=>({
+                            ...f,
+                            guestNameEnglish: englishName,
+                            guestName: englishName
+                          }));
+                          // Auto-transliterate to Tamil
+                          debouncedTransliterate(englishName);
+                        }} 
+                        placeholder="Type name in English"
+                        required
+                        className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                    </div>
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">விருந்தினர் பெயர் (Auto)</label>
+                      <div className="w-full px-3 py-2.5 bg-surface-variant/50 border border-outline-variant/50 font-label text-sm text-on-surface min-h-[42px] flex items-center">
+                        {form.guestNameTamil || <span className="italic text-xs text-on-surface-variant">Auto-generated...</span>}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Relation / உறவு</label>
-                    <input value={form.guestRelation} onChange={e=>setForm(f=>({...f,guestRelation:e.target.value}))} placeholder="Uncle, Friend..."
-                      className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+
+                  {/* Village - English and Tamil in one row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Village (English)</label>
+                      <input 
+                        value={form.village} 
+                        onChange={e=>{
+                          const englishVillage = e.target.value;
+                          setForm(f=>({
+                            ...f,
+                            village: englishVillage
+                          }));
+                          // Auto-transliterate to Tamil
+                          debouncedTransliterateVillage(englishVillage);
+                        }} 
+                        placeholder="Type village name"
+                        className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                    </div>
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">ஊர் (Auto)</label>
+                      <div className="w-full px-3 py-2.5 bg-surface-variant/50 border border-outline-variant/50 font-label text-sm text-on-surface min-h-[42px] flex items-center">
+                        {form.villageTamil || <span className="italic text-xs text-on-surface-variant">Auto-generated...</span>}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Notes</label>
-                    <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Any remarks..."
-                      className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+
+                  {/* Relation and Notes */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Relation / உறவு</label>
+                      <input value={form.guestRelation} onChange={e=>setForm(f=>({...f,guestRelation:e.target.value}))} placeholder="Uncle, Friend..."
+                        className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                    </div>
+                    <div>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Notes</label>
+                      <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Any remarks..."
+                        className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                    </div>
                   </div>
                 </div>
 
@@ -287,36 +385,98 @@ export default function EntryWorkspace() {
             <>
               {/* Table header */}
               <div className="hidden md:grid grid-cols-12 px-6 py-3 bg-surface-variant/50 border-b border-outline-variant/10">
-                {['Guest Name','Relation','Amount/Item','Type','Date','Actions'].map((h,i)=>(
-                  <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-3':i===1?'col-span-2':i===2?'col-span-3':i===3?'col-span-1':i===4?'col-span-1':'col-span-2'}`}>{h}</div>
+                {['Guest Name','Village','Relation','Amount/Item','Type','Date'].map((h,i)=>(
+                  <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-2':i===1?'col-span-2':i===2?'col-span-2':i===3?'col-span-3':i===4?'col-span-2':'col-span-1'}`}>{h}</div>
                 ))}
               </div>
 
               {contributions.map((c, idx) => (
                 <div key={c._id} className={`grid grid-cols-1 md:grid-cols-12 px-5 md:px-6 py-4 items-center border-b border-outline-variant/10 gap-2 md:gap-0 group transition-colors ${idx%2===0?'bg-white':'bg-surface-variant/10'} hover:bg-secondary/5`}>
-                  {/* Mobile layout */}
-                  <div className="md:hidden flex justify-between items-start">
+                  {/* Mobile layout - Column style with headings */}
+                  <div className="md:hidden space-y-3">
+                    <div className="flex justify-between items-start pb-2 border-b border-outline-variant/20">
+                      <div className="flex-1">
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Guest Name</p>
+                        <p className="font-display font-bold text-primary text-base">
+                          {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={()=>openEdit(c)} className="p-1.5 text-secondary hover:bg-secondary/10 transition-colors">
+                          <span className="material-symbols-outlined text-base">edit</span>
+                        </button>
+                        <button onClick={()=>handleDelete(c._id)} className="p-1.5 text-error/60 hover:text-error hover:bg-error/10 transition-colors">
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {c.village && (
+                      <div>
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Village</p>
+                        <p className="font-label text-sm text-on-surface">
+                          {lang === 'ta' ? (c.villageTamil || c.village) : c.village}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {c.guestRelation && (
+                      <div>
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Relation</p>
+                        <p className="font-label text-sm text-on-surface">{c.guestRelation}</p>
+                      </div>
+                    )}
+                    
                     <div>
-                      <p className="font-display font-bold text-primary text-base">{c.guestName}</p>
-                      {c.guestRelation && <p className="font-label text-xs text-on-surface-variant">{c.guestRelation}</p>}
-                      <p className="font-display font-bold text-secondary mt-1">
-                        {c.giftType === 'cash' ? fmt(c.amount) : c.giftDescription || GIFT_LABEL[c.giftType]}
-                      </p>
+                      <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Amount/Item</p>
+                      {c.giftType==='cash'
+                        ? <p className="font-display font-bold text-primary text-lg">{fmt(c.amount)}</p>
+                        : <div>
+                            <p className="font-display font-bold text-primary">{c.giftDescription || GIFT_LABEL[c.giftType]}</p>
+                            {c.amount > 0 && <p className="font-label text-xs text-on-surface-variant">~{fmt(c.amount)}</p>}
+                          </div>
+                      }
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={()=>openEdit(c)} className="p-1.5 text-secondary hover:bg-secondary/10 transition-colors">
-                        <span className="material-symbols-outlined text-base">edit</span>
-                      </button>
-                      <button onClick={()=>handleDelete(c._id)} className="p-1.5 text-error/60 hover:text-error hover:bg-error/10 transition-colors">
-                        <span className="material-symbols-outlined text-base">delete</span>
-                      </button>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Type</p>
+                        <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-1">
+                          <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
+                          {GIFT_LABEL[c.giftType]}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Date</p>
+                        <p className="font-label text-[10px] text-on-surface-variant">
+                          {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
+                        </p>
+                      </div>
                     </div>
+                    
+                    {c.notes && (
+                      <div>
+                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Notes</p>
+                        <p className="font-serif text-xs text-on-surface-variant italic">{c.notes}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Desktop layout */}
-                  <div className="hidden md:block col-span-3">
-                    <p className="font-display font-bold text-primary text-base">{c.guestName}</p>
-                    {c.notes && <p className="font-serif text-xs text-on-surface-variant italic">{c.notes}</p>}
+                  <div className="hidden md:block col-span-2">
+                    <p className="font-display font-bold text-primary text-base">
+                      {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
+                    </p>
+                    {c.notes && <p className="font-serif text-xs text-on-surface-variant italic mt-1">{c.notes}</p>}
+                  </div>
+                  <div className="hidden md:block col-span-2">
+                    {c.village ? (
+                      <p className="font-label text-sm text-on-surface">
+                        {lang === 'ta' ? (c.villageTamil || c.village) : c.village}
+                      </p>
+                    ) : (
+                      <span className="text-on-surface-variant text-xs">—</span>
+                    )}
                   </div>
                   <div className="hidden md:block col-span-2 font-label text-xs text-on-surface-variant">{c.guestRelation||'—'}</div>
                   <div className="hidden md:block col-span-3">
@@ -328,22 +488,24 @@ export default function EntryWorkspace() {
                         </div>
                     }
                   </div>
-                  <div className="hidden md:block col-span-1">
+                  <div className="hidden md:block col-span-2">
                     <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-1">
                       <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
                       {GIFT_LABEL[c.giftType]}
                     </span>
                   </div>
-                  <div className="hidden md:block col-span-1 font-label text-[10px] text-on-surface-variant">
-                    {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
-                  </div>
-                  <div className="hidden md:flex col-span-2 justify-end gap-2">
-                    <button onClick={()=>openEdit(c)} className="p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Edit">
-                      <span className="material-symbols-outlined text-base">edit</span>
-                    </button>
-                    <button onClick={()=>handleDelete(c._id)} className="p-1.5 text-error/50 hover:text-error hover:bg-error/10 transition-colors" title="Delete">
-                      <span className="material-symbols-outlined text-base">delete</span>
-                    </button>
+                  <div className="hidden md:flex col-span-1 justify-between items-center">
+                    <p className="font-label text-[10px] text-on-surface-variant">
+                      {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
+                    </p>
+                    <div className="flex gap-1">
+                      <button onClick={()=>openEdit(c)} className="p-1 text-secondary hover:bg-secondary/10 transition-colors" title="Edit">
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button onClick={()=>handleDelete(c._id)} className="p-1 text-error/50 hover:text-error hover:bg-error/10 transition-colors" title="Delete">
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
