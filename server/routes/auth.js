@@ -48,13 +48,13 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('Login attempt:', { email: req.body.email });
+    console.log('Login attempt:', { email: req.body.email, rawPassword: req.body.password });
     
     let { email, password } = req.body;
     
     // Trim and normalize inputs - MUST match registration
     email = email?.trim().toLowerCase();
-    password = password?.trim();
+    const trimmedPassword = password?.trim();
     
     if (!email || !password) {
       console.log('Login failed: Missing email or password');
@@ -70,10 +70,19 @@ router.post('/login', async (req, res) => {
     console.log('User found:', { id: user._id, email: user.email, hasPassword: !!user.password });
     console.log('Stored password hash length:', user.password?.length);
     console.log('Stored password starts with:', user.password?.substring(0, 7));
-    console.log('Input password length:', password?.length);
+    console.log('Input password (trimmed) length:', trimmedPassword?.length);
+    console.log('Input password (raw) length:', password?.length);
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    console.log('Password match result:', isMatch);
+    // Try with trimmed password first
+    let isMatch = await bcrypt.compare(trimmedPassword, user.password);
+    console.log('Password match result (trimmed):', isMatch);
+    
+    // If trimmed doesn't work, try with original password
+    if (!isMatch && trimmedPassword !== password) {
+      console.log('Trying with original (non-trimmed) password...');
+      isMatch = await bcrypt.compare(password, user.password);
+      console.log('Password match result (original):', isMatch);
+    }
     
     if (!isMatch) {
       console.log('Login failed: Password mismatch for user:', user.email);

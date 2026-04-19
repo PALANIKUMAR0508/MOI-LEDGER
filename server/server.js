@@ -132,8 +132,28 @@ app.post('/api/debug/reset-password', async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedPassword = newPassword.trim();
     
+    console.log('Password reset attempt for:', normalizedEmail);
+    
     const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
+      // Try to find with original email (not normalized)
+      const userAny = await User.findOne({ email: email });
+      if (userAny) {
+        console.log('Found user with non-normalized email:', userAny.email);
+        // Update email and password
+        const hashed = await bcrypt.hash(normalizedPassword, 12);
+        userAny.email = normalizedEmail;
+        userAny.password = hashed;
+        await userAny.save();
+        console.log('User email normalized and password reset');
+        return res.json({
+          success: true,
+          message: 'Password reset and email normalized',
+          userId: userAny._id,
+          oldEmail: email,
+          newEmail: normalizedEmail
+        });
+      }
       return res.status(404).json({ 
         message: 'User not found',
         searchedEmail: normalizedEmail
@@ -148,7 +168,7 @@ app.post('/api/debug/reset-password', async (req, res) => {
     user.email = normalizedEmail; // Also normalize email
     await user.save();
     
-    console.log('Password reset for user:', user._id);
+    console.log('Password reset successful for user:', user._id);
     
     res.json({
       success: true,
