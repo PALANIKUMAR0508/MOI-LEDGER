@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MOI Ledger API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 MOI Ledger API Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Test API Connection</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test MongoDB Connection</h2>
+        <button onclick="testMongoDB()">Test MongoDB</button>
+        <div id="mongodb-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test User Registration</h2>
+        <input type="text" id="reg-username" placeholder="Username" value="testuser123">
+        <input type="email" id="reg-email" placeholder="Email" value="testuser123@example.com">
+        <input type="password" id="reg-password" placeholder="Password" value="testpass123">
+        <button onclick="testRegister()">Register Test User</button>
+        <div id="register-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test User Login</h2>
+        <input type="email" id="login-email" placeholder="Email" value="testuser123@example.com">
+        <input type="password" id="login-password" placeholder="Password" value="testpass123">
+        <button onclick="testLogin()">Login Test User</button>
+        <div id="login-result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://moi-ledger.onrender.com/api';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = 'result' + (isError ? ' error' : '');
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch(`${API_URL}/test`);
+                const data = await response.json();
+                showResult('connection-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                });
+            } catch (error) {
+                showResult('connection-result', {
+                    error: error.message,
+                    details: 'Cannot connect to API. Check if backend is running.'
+                }, true);
+            }
+        }
+
+        async function testMongoDB() {
+            try {
+                const response = await fetch('https://moi-ledger.onrender.com/health');
+                const data = await response.json();
+                showResult('mongodb-result', {
+                    status: response.status,
+                    data: data,
+                    mongodb_status: data.mongodb
+                });
+            } catch (error) {
+                showResult('mongodb-result', {
+                    error: error.message
+                }, true);
+            }
+        }
+
+        async function testRegister() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                showResult('register-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult('register-result', {
+                    error: error.message,
+                    details: 'Registration request failed'
+                }, true);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                showResult('login-result', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: data
+                }, !response.ok);
+            } catch (error) {
+                showResult('login-result', {
+                    error: error.message,
+                    details: 'Login request failed'
+                }, true);
+            }
+        }
+
+        // Auto-test connection on load
+        window.onload = () => {
+            testConnection();
+        };
+    </script>
+</body>
+</html>

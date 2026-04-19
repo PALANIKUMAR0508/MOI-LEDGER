@@ -240,38 +240,38 @@ export default function EntryWorkspace() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 md:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-10">
         {/* Breadcrumb + Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-on-surface-variant font-label text-[10px] uppercase tracking-widest mb-4">
-            <Link to="/dashboard" className="hover:text-secondary transition-colors">Dashboard</Link>
+        <div className="mb-6 md:mb-8">
+          <div className="flex items-center gap-2 text-on-surface-variant font-label text-[10px] uppercase tracking-widest mb-3 md:mb-4 overflow-x-auto">
+            <Link to="/dashboard" className="hover:text-secondary transition-colors whitespace-nowrap">Dashboard</Link>
             <span className="material-symbols-outlined text-sm">chevron_right</span>
-            <span className="text-primary font-bold truncate max-w-xs">{fn?.name}</span>
+            <span className="text-primary font-bold truncate">{fn?.name}</span>
           </div>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <p className="font-label text-[10px] uppercase tracking-[0.4em] text-secondary mb-1 font-bold">{fn?.category?.toUpperCase()} — {fn?.date ? new Date(fn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}) : ''}</p>
-              <h1 className="font-display text-3xl md:text-4xl font-bold text-primary leading-tight">{fn?.name}</h1>
+              <p className="font-label text-[9px] md:text-[10px] uppercase tracking-[0.3em] md:tracking-[0.4em] text-secondary mb-1 font-bold">{fn?.category?.toUpperCase()} — {fn?.date ? new Date(fn.date).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}) : ''}</p>
+              <h1 className="font-display text-2xl md:text-3xl lg:text-4xl font-bold text-primary leading-tight break-words">{fn?.name}</h1>
               {fn?.venue && <p className="font-serif text-on-surface-variant italic mt-1 text-sm">{fn.venue}</p>}
             </div>
-            <button onClick={openAdd} className="gold-gradient text-primary px-7 py-3.5 font-label font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 hover:brightness-110 transition-all shadow-md whitespace-nowrap">
+            <button onClick={openAdd} className="gold-gradient text-primary px-6 md:px-7 py-3 md:py-3.5 font-label font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 hover:brightness-110 transition-all shadow-md w-full md:w-auto md:self-start">
               <span className="material-symbols-outlined text-sm">add</span>Record Entry
             </button>
           </div>
         </div>
 
         {/* Stats — only cash, gold, gift, other + total */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-10">
           {[
             { label:'Total Contributions', value: fmt(fn?.totalContributions||0), icon:'account_balance_wallet' },
             { label:'Cash Total', value: fmt(cashTotal), icon:'payments' },
             { label:'Total Guests', value: contributions.length.toString(), icon:'diversity_3' },
             { label:'Non-cash Items', value: contributions.filter(c=>c.giftType!=='cash').length.toString(), icon:'card_giftcard' },
           ].map(({label,value,icon})=>(
-            <div key={label} className="bg-surface-variant border border-outline-variant/20 p-5">
-              <span className="material-symbols-outlined text-secondary text-xl mb-2 block">{icon}</span>
-              <p className="font-display font-bold text-primary text-xl">{value}</p>
-              <p className="font-label text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mt-1">{label}</p>
+            <div key={label} className="bg-surface-variant border border-outline-variant/20 p-4 md:p-5">
+              <span className="material-symbols-outlined text-secondary text-lg md:text-xl mb-2 block">{icon}</span>
+              <p className="font-display font-bold text-primary text-lg md:text-xl break-words">{value}</p>
+              <p className="font-label text-[9px] md:text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mt-1 leading-tight">{label}</p>
             </div>
           ))}
         </div>
@@ -406,19 +406,19 @@ export default function EntryWorkspace() {
 
         {/* Contribution Ledger */}
         <div className="bg-white border border-outline-variant/30 ambient-shadow">
-          <div className="flex items-center justify-between p-6 md:p-8 border-b border-outline-variant/20">
+          <div className="flex flex-col md:flex-row md:items-center justify-between p-4 md:p-6 lg:p-8 border-b border-outline-variant/20 gap-4">
             <div>
-              <h2 className="font-headline text-base md:text-lg font-bold text-primary tracking-widest uppercase">Contribution Ledger</h2>
+              <h2 className="font-headline text-sm md:text-base lg:text-lg font-bold text-primary tracking-widest uppercase">Contribution Ledger</h2>
               <p className="font-label text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">{contributions.length} entries recorded</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <button 
                 onClick={openAdd}
-                className="font-label text-[10px] text-white bg-secondary hover:bg-secondary/90 uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold px-4 py-2 shadow-sm">
-                <span className="material-symbols-outlined text-sm">add</span>Add
+                className="font-label text-[9px] md:text-[10px] text-white bg-secondary hover:bg-secondary/90 uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold px-3 md:px-4 py-2 shadow-sm">
+                <span className="material-symbols-outlined text-sm">add</span><span className="hidden sm:inline">Add</span>
               </button>
-              <Link to={`/reports?fn=${id}`} className="font-label text-[10px] text-secondary hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold border border-secondary hover:border-primary px-4 py-2">
-                <span className="material-symbols-outlined text-sm">description</span>View Report
+              <Link to={`/reports?fn=${id}`} className="font-label text-[9px] md:text-[10px] text-secondary hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold border border-secondary hover:border-primary px-3 md:px-4 py-2">
+                <span className="material-symbols-outlined text-sm">description</span><span className="hidden sm:inline">Report</span>
               </Link>
             </div>
           </div>
@@ -434,8 +434,8 @@ export default function EntryWorkspace() {
             </div>
           ) : (
             <>
-              {/* Table with scrollable body */}
-              <div className="overflow-hidden">
+              {/* Desktop Table View - Hidden on mobile */}
+              <div className="hidden md:block overflow-hidden">
                 {/* Table header - Fixed */}
                 <div className="grid grid-cols-12 px-3 md:px-6 py-3 bg-surface-variant/50 border-b border-outline-variant/10 gap-3">
                   {[t.guestName, t.village, t.relation, t.amountItem, t.type, t.date].map((h,i)=>(
@@ -485,12 +485,12 @@ export default function EntryWorkspace() {
                   <div className="col-span-2 pr-3 border-r border-outline-variant/20">
                     <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-1">
                       <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
-                      <span className="hidden md:inline">{GIFT_LABEL[c.giftType]}</span>
+                      {GIFT_LABEL[c.giftType]}
                     </span>
                   </div>
                   
                   {/* Date + Actions */}
-                  <div className="col-span-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-1">
+                  <div className="col-span-1 flex flex-col justify-between items-start gap-1">
                     <p className="font-label font-semibold text-[10px] text-on-surface-variant leading-tight">
                       {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
                     </p>
@@ -508,11 +508,81 @@ export default function EntryWorkspace() {
                 </div>
               </div>
 
+              {/* Mobile Card View - Visible only on mobile */}
+              <div className="md:hidden">
+                <div className={contributions.length > 4 ? 'overflow-y-auto' : ''} style={{maxHeight: contributions.length > 4 ? '500px' : 'none'}}>
+                  {contributions.map((c, idx) => (
+                    <div key={c._id} className={`p-4 border-b border-outline-variant/10 ${idx%2===0?'bg-white':'bg-surface-variant/10'}`}>
+                      {/* Header: Name + Actions */}
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <p className="font-display font-bold text-primary text-base leading-tight break-words mb-1">
+                            {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-0.5">
+                              <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
+                              {GIFT_LABEL[c.giftType]}
+                            </span>
+                            <span className="font-label text-[10px] text-on-surface-variant">
+                              {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-1 ml-2">
+                          <button onClick={()=>openEdit(c)} className="p-1.5 text-secondary hover:bg-secondary/10 transition-colors" title="Edit">
+                            <span className="material-symbols-outlined text-base">edit</span>
+                          </button>
+                          <button onClick={()=>handleDelete(c._id)} className="p-1.5 text-error/50 hover:text-error hover:bg-error/10 transition-colors" title="Delete">
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Details Grid */}
+                      <div className="space-y-2">
+                        {/* Village & Relation */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {c.village && (
+                            <div>
+                              <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">{t.village}</p>
+                              <p className="font-label font-semibold text-xs text-on-surface break-words">
+                                {lang === 'ta' ? (c.villageTamil || c.village) : c.village}
+                              </p>
+                            </div>
+                          )}
+                          {c.guestRelation && (
+                            <div>
+                              <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">{t.relation}</p>
+                              <p className="font-label font-bold text-xs text-on-surface break-words">
+                                {lang === 'ta' ? (c.relationTamil || c.guestRelation) : c.guestRelation}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Amount/Item */}
+                        <div className="pt-2 border-t border-outline-variant/20">
+                          <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-wider mb-1">{t.amountItem}</p>
+                          {c.giftType==='cash'
+                            ? <p className="font-display font-bold text-primary text-xl">{fmt(c.amount)}</p>
+                            : <div>
+                                <p className="font-display font-bold text-primary text-sm break-words">{c.giftDescription || GIFT_LABEL[c.giftType]}</p>
+                                {c.amount > 0 && <p className="font-label text-xs text-on-surface-variant mt-0.5">~{fmt(c.amount)}</p>}
+                              </div>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Total row - Fixed at bottom */}
-              <div className="grid grid-cols-12 px-6 py-5 bg-primary items-center gap-0">
-                <div className="col-span-6 md:col-span-4 font-headline font-bold text-white text-sm uppercase tracking-widest">Grand Total</div>
-                <div className="col-span-6 md:col-span-3 font-display font-bold text-accent text-base">{fmt(cashTotal)}</div>
-                <div className="col-span-12 md:col-span-5 flex items-center justify-start md:justify-end">
+              <div className="grid grid-cols-1 md:grid-cols-12 px-4 md:px-6 py-4 md:py-5 bg-primary items-center gap-2 md:gap-0">
+                <div className="md:col-span-6 lg:col-span-4 font-headline font-bold text-white text-sm md:text-base uppercase tracking-widest">Grand Total</div>
+                <div className="md:col-span-6 lg:col-span-3 font-display font-bold text-accent text-xl md:text-2xl">{fmt(cashTotal)}</div>
+                <div className="md:col-span-12 lg:col-span-5 flex items-center justify-start lg:justify-end">
                   <span className="font-label text-[10px] text-white/50 uppercase tracking-wider font-semibold">{contributions.length} Entries</span>
                 </div>
               </div>
