@@ -7,11 +7,11 @@ import { API_URL } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const CATEGORY_IMAGES = {
-  marriage:     '/src/assets/images/Marriage.png',
-  engagement:   '/src/assets/images/Engagement.png',
-  reception:    '/src/assets/images/Reception.png',
-  nalangu:      '/src/assets/images/Ceremonial Post Installation Ritual.png',
-  valaikappu:   '/src/assets/images/Baby-shower.png',
+  marriage:     'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80',
+  engagement:   'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600&q=80',
+  reception:    'https://images.unsplash.com/photo-1519167758481-83f29da8c2b0?w=600&q=80',
+  nalangu:      'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=600&q=80',
+  valaikappu:   'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
   naming:       'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&q=80',
   earPiercing:  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
   birthday1st:  'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
