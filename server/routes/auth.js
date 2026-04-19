@@ -39,16 +39,38 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
+    console.log('Login attempt:', { email: req.body.email });
+    
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      console.log('Login failed: Missing email or password');
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+    
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) {
+      console.log('Login failed: User not found for email:', email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+    
+    console.log('User found:', { id: user._id, email: user.email, hasPassword: !!user.password });
+    console.log('Stored password hash length:', user.password?.length);
+    console.log('Input password length:', password?.length);
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    console.log('Password match result:', isMatch);
+    
+    if (!isMatch) {
+      console.log('Login failed: Password mismatch for user:', user.email);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
+    console.log('Login successful for user:', user._id);
     const token = jwt.sign({ id: user._id, username: user.username }, SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
   } catch (err) {
+    console.error('Login error:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });

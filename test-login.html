@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 5px;
+            width: 100%;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+        .success {
+            border-left-color: #4CAF50;
+            background: #e8f5e9;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 Login Debug Test</h1>
+    
+    <div class="info">
+        <strong>Instructions:</strong><br>
+        1. First register a new test user<br>
+        2. Then try to login with the same credentials<br>
+        3. Check the results to see what's happening
+    </div>
+
+    <div class="test-section">
+        <h2>Step 1: Register New User</h2>
+        <input type="text" id="reg-username" placeholder="Username" value="">
+        <input type="email" id="reg-email" placeholder="Email" value="">
+        <input type="password" id="reg-password" placeholder="Password" value="">
+        <button onclick="testRegister()">Register</button>
+        <div id="register-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 2: Login with Same User</h2>
+        <input type="email" id="login-email" placeholder="Email (same as above)" value="">
+        <input type="password" id="login-password" placeholder="Password (same as above)" value="">
+        <button onclick="testLogin()">Login</button>
+        <div id="login-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Step 3: Check Render Logs</h2>
+        <p>After testing, check your Render logs for detailed information:</p>
+        <ol>
+            <li>Go to <a href="https://dashboard.render.com" target="_blank">Render Dashboard</a></li>
+            <li>Click on your service</li>
+            <li>Click "Logs" tab</li>
+            <li>Look for login attempt logs</li>
+        </ol>
+    </div>
+
+    <script>
+        const API_URL = 'https://moi-ledger.onrender.com/api';
+        let registeredEmail = '';
+        let registeredPassword = '';
+
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            element.className = 'result' + (isError ? ' error' : ' success');
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testRegister() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (!username || !email || !password) {
+                alert('Please fill all fields!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Save credentials for login test
+                    registeredEmail = email;
+                    registeredPassword = password;
+                    document.getElementById('login-email').value = email;
+                    document.getElementById('login-password').value = password;
+                    
+                    showResult('register-result', {
+                        status: 'SUCCESS ✓',
+                        message: 'User registered successfully!',
+                        email: email,
+                        username: username,
+                        userId: data.user?.id,
+                        token: data.token ? 'Token received' : 'No token'
+                    }, false);
+                } else {
+                    showResult('register-result', {
+                        status: 'FAILED ✗',
+                        httpStatus: response.status,
+                        error: data.message || 'Registration failed',
+                        details: data
+                    }, true);
+                }
+            } catch (error) {
+                showResult('register-result', {
+                    status: 'ERROR ✗',
+                    error: error.message,
+                    details: 'Cannot connect to API'
+                }, true);
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!email || !password) {
+                alert('Please fill email and password!');
+                return;
+            }
+
+            try {
+                console.log('Attempting login with:', { email, passwordLength: password.length });
+                
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult('login-result', {
+                        status: 'SUCCESS ✓',
+                        message: 'Login successful!',
+                        email: email,
+                        userId: data.user?.id,
+                        username: data.user?.username,
+                        token: data.token ? 'Token received' : 'No token'
+                    }, false);
+                } else {
+                    showResult('login-result', {
+                        status: 'FAILED ✗',
+                        httpStatus: response.status,
+                        error: data.message || 'Login failed',
+                        email: email,
+                        passwordLength: password.length,
+                        details: data,
+                        note: 'Check Render logs for detailed error information'
+                    }, true);
+                }
+            } catch (error) {
+                showResult('login-result', {
+                    status: 'ERROR ✗',
+                    error: error.message,
+                    details: 'Cannot connect to API'
+                }, true);
+            }
+        }
+
+        // Generate random test credentials on load
+        window.onload = () => {
+            const randomNum = Math.floor(Math.random() * 10000);
+            document.getElementById('reg-username').value = `testuser${randomNum}`;
+            document.getElementById('reg-email').value = `testuser${randomNum}@example.com`;
+            document.getElementById('reg-password').value = 'TestPass123!';
+        };
+    </script>
+</body>
+</html>

@@ -53,6 +53,33 @@ app.get('/api/test', (req, res) => {
   });
 });
 
+// Debug endpoint to check if user exists (REMOVE IN PRODUCTION)
+app.get('/api/debug/user/:email', async (req, res) => {
+  try {
+    const User = require('./models/User');
+    const user = await User.findOne({ email: req.params.email });
+    if (!user) {
+      return res.json({ 
+        found: false, 
+        message: 'User not found',
+        email: req.params.email 
+      });
+    }
+    res.json({ 
+      found: true,
+      userId: user._id,
+      username: user.username,
+      email: user.email,
+      hasPassword: !!user.password,
+      passwordLength: user.password?.length,
+      passwordStartsWith: user.password?.substring(0, 7), // bcrypt hashes start with $2a$ or $2b$
+      createdAt: user.createdAt
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/functions', require('./routes/functions'));
