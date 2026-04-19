@@ -38,10 +38,7 @@ console.log('Starting server...');
 console.log('PORT:', PORT);
 console.log('MONGO_URI:', MONGO_URI ? 'Set (hidden)' : 'NOT SET');
 
-mongoose.connect(MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✓ MongoDB connected successfully');
     app.listen(PORT, '0.0.0.0', () => {
