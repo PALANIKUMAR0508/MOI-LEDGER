@@ -118,6 +118,52 @@ app.post('/api/debug/test-password', async (req, res) => {
   }
 });
 
+// Emergency password reset endpoint (REMOVE IN PRODUCTION)
+app.post('/api/debug/reset-password', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const User = require('./models/User');
+    const { email, newPassword } = req.body;
+    
+    if (!email || !newPassword) {
+      return res.status(400).json({ message: 'Email and new password required' });
+    }
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = newPassword.trim();
+    
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        searchedEmail: normalizedEmail
+      });
+    }
+    
+    // Hash new password
+    const hashed = await bcrypt.hash(normalizedPassword, 12);
+    
+    // Update user
+    user.password = hashed;
+    user.email = normalizedEmail; // Also normalize email
+    await user.save();
+    
+    console.log('Password reset for user:', user._id);
+    
+    res.json({
+      success: true,
+      message: 'Password reset successfully',
+      userId: user._id,
+      email: user.email,
+      newPasswordLength: normalizedPassword.length,
+      hashedPasswordLength: hashed.length
+    });
+  } catch (err) {
+    console.error('Password reset error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/functions', require('./routes/functions'));
