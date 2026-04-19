@@ -29,14 +29,16 @@ function GiftTypeForm({ form, setForm }) {
         <>
           <div>
             <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Gold Item Type *</label>
-            <div className="grid grid-cols-2 gap-2">
+            <select 
+              value={form.giftDescription} 
+              onChange={e => setForm(f=>({...f, giftDescription: e.target.value}))}
+              required
+              className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors">
+              <option value="">— Select Gold Type —</option>
               {GOLD_TYPES.map(gt => (
-                <button key={gt} type="button" onClick={() => setForm(f=>({...f, giftDescription: gt}))}
-                  className={`text-left px-3 py-2 border text-[10px] font-label transition-all ${form.giftDescription===gt ? 'border-secondary bg-secondary/10 text-secondary font-bold' : 'border-outline-variant text-on-surface-variant hover:border-secondary/50'}`}>
-                  {gt}
-                </button>
+                <option key={gt} value={gt}>{gt}</option>
               ))}
-            </div>
+            </select>
           </div>
           <div>
             <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Estimated Value (₹)</label>
@@ -53,18 +55,31 @@ function GiftTypeForm({ form, setForm }) {
         <>
           <div>
             <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Gift Name / Type *</label>
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            <select 
+              value={GIFT_TYPES_LIST.includes(form.giftDescription) ? form.giftDescription : 'custom'} 
+              onChange={e => {
+                if (e.target.value !== 'custom') {
+                  setForm(f=>({...f, giftDescription: e.target.value}));
+                } else {
+                  setForm(f=>({...f, giftDescription: ''}));
+                }
+              }}
+              required={!form.giftDescription}
+              className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors mb-3">
+              <option value="">— Select Gift Type —</option>
               {GIFT_TYPES_LIST.map(gt => (
-                <button key={gt} type="button" onClick={() => setForm(f=>({...f, giftDescription: gt}))}
-                  className={`text-left px-3 py-2 border text-[10px] font-label transition-all ${form.giftDescription===gt ? 'border-secondary bg-secondary/10 text-secondary font-bold' : 'border-outline-variant text-on-surface-variant hover:border-secondary/50'}`}>
-                  {gt}
-                </button>
+                <option key={gt} value={gt}>{gt}</option>
               ))}
-            </div>
-            <input value={form.giftDescription.startsWith('Other') || !GIFT_TYPES_LIST.includes(form.giftDescription) ? form.giftDescription : ''} 
-              onChange={e => setForm(f=>({...f, giftDescription: e.target.value}))}
-              placeholder="Or type gift name..."
-              className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+              <option value="custom">— Custom / Other —</option>
+            </select>
+            {(!GIFT_TYPES_LIST.includes(form.giftDescription) || form.giftDescription === '') && (
+              <input 
+                value={form.giftDescription} 
+                onChange={e => setForm(f=>({...f, giftDescription: e.target.value}))}
+                placeholder="Type custom gift name..."
+                required
+                className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+            )}
           </div>
           <div>
             <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Estimated Value (₹)</label>
@@ -98,13 +113,13 @@ function GiftTypeForm({ form, setForm }) {
   );
 }
 
-const EMPTY_FORM = { guestName:'', guestNameTamil:'', guestNameEnglish:'', village:'', villageTamil:'', guestRelation:'', amount:'', giftType:'cash', giftDescription:'', notes:'' };
+const EMPTY_FORM = { guestName:'', guestNameTamil:'', guestNameEnglish:'', village:'', villageTamil:'', guestRelation:'', relationTamil:'', amount:'', giftType:'cash', giftDescription:'', notes:'' };
 const GIFT_ICON = { cash:'payments', gold:'diamond', gift:'card_giftcard', other:'category' };
 const GIFT_LABEL = { cash:'Cash', gold:'Gold', gift:'Gift', other:'Other' };
 
 export default function EntryWorkspace() {
   const { id } = useParams();
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   const [fn, setFn] = useState(null);
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -139,13 +154,29 @@ export default function EntryWorkspace() {
     []
   );
 
+  // Debounced transliteration for relation
+  const debouncedTransliterateRelation = useCallback(
+    debounce(async (englishText) => {
+      if (englishText.trim()) {
+        const tamilText = await transliterateToTamil(englishText);
+        setForm(f => ({ ...f, relationTamil: tamilText }));
+      } else {
+        setForm(f => ({ ...f, relationTamil: '' }));
+      }
+    }, 500),
+    []
+  );
+
   const load = async () => {
     try {
       const [fnRes, cRes] = await Promise.all([
         axios.get(`${API_URL}/functions/${id}`),
         axios.get(`${API_URL}/contributions/function/${id}`),
       ]);
-      setFn(fnRes.data); setContributions(cRes.data);
+      setFn(fnRes.data); 
+      // Sort contributions in ascending order (oldest first, newest last)
+      const sortedContributions = cRes.data.sort((a, b) => new Date(a.recordedAt) - new Date(b.recordedAt));
+      setContributions(sortedContributions);
     } catch { toast.error('Could not load function data'); }
     finally { setLoading(false); }
   };
@@ -161,6 +192,7 @@ export default function EntryWorkspace() {
       village: c.village||'',
       villageTamil: c.villageTamil||'',
       guestRelation: c.guestRelation||'', 
+      relationTamil: c.relationTamil||'',
       amount: c.amount, 
       giftType: c.giftType, 
       giftDescription: c.giftDescription||'', 
@@ -315,17 +347,29 @@ export default function EntryWorkspace() {
                     </div>
                   </div>
 
-                  {/* Relation and Notes */}
+                  {/* Relation - English and Tamil in one row */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Relation / உறவு</label>
-                      <input value={form.guestRelation} onChange={e=>setForm(f=>({...f,guestRelation:e.target.value}))} placeholder="Uncle, Friend..."
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Relation (English)</label>
+                      <input 
+                        value={form.guestRelation} 
+                        onChange={e=>{
+                          const englishRelation = e.target.value;
+                          setForm(f=>({
+                            ...f,
+                            guestRelation: englishRelation
+                          }));
+                          // Auto-transliterate to Tamil
+                          debouncedTransliterateRelation(englishRelation);
+                        }} 
+                        placeholder="Uncle, Friend..."
                         className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
                     </div>
                     <div>
-                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">Notes</label>
-                      <input value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Any remarks..."
-                        className="w-full px-3 py-2.5 bg-surface-variant border border-outline-variant focus:border-secondary focus:ring-0 font-label text-sm text-on-surface transition-colors"/>
+                      <label className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block mb-1.5">உறவு (Auto)</label>
+                      <div className="w-full px-3 py-2.5 bg-surface-variant/50 border border-outline-variant/50 font-label text-sm text-on-surface min-h-[42px] flex items-center">
+                        {form.relationTamil || <span className="italic text-xs text-on-surface-variant">Auto-generated...</span>}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -367,9 +411,16 @@ export default function EntryWorkspace() {
               <h2 className="font-headline text-base md:text-lg font-bold text-primary tracking-widest uppercase">Contribution Ledger</h2>
               <p className="font-label text-[10px] text-on-surface-variant uppercase tracking-widest mt-1">{contributions.length} entries recorded</p>
             </div>
-            <Link to={`/reports?fn=${id}`} className="font-label text-[10px] text-secondary hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold">
-              <span className="material-symbols-outlined text-sm">description</span>View Report
-            </Link>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={openAdd}
+                className="font-label text-[10px] text-white bg-secondary hover:bg-secondary/90 uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold px-4 py-2 shadow-sm">
+                <span className="material-symbols-outlined text-sm">add</span>Add
+              </button>
+              <Link to={`/reports?fn=${id}`} className="font-label text-[10px] text-secondary hover:text-primary uppercase tracking-widest transition-colors flex items-center gap-1.5 font-bold border border-secondary hover:border-primary px-4 py-2">
+                <span className="material-symbols-outlined text-sm">description</span>View Report
+              </Link>
+            </div>
           </div>
 
           {contributions.length === 0 ? (
@@ -383,119 +434,64 @@ export default function EntryWorkspace() {
             </div>
           ) : (
             <>
-              {/* Table header */}
-              <div className="hidden md:grid grid-cols-12 px-6 py-3 bg-surface-variant/50 border-b border-outline-variant/10">
-                {['Guest Name','Village','Relation','Amount/Item','Type','Date'].map((h,i)=>(
-                  <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-2':i===1?'col-span-2':i===2?'col-span-2':i===3?'col-span-3':i===4?'col-span-2':'col-span-1'}`}>{h}</div>
-                ))}
-              </div>
+              {/* Table with scrollable body */}
+              <div className="overflow-hidden">
+                {/* Table header - Fixed */}
+                <div className="grid grid-cols-12 px-3 md:px-6 py-3 bg-surface-variant/50 border-b border-outline-variant/10 gap-3">
+                  {[t.guestName, t.village, t.relation, t.amountItem, t.type, t.date].map((h,i)=>(
+                    <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-2 pr-3 border-r border-outline-variant/20':i===1?'col-span-2 pr-3 border-r border-outline-variant/20':i===2?'col-span-2 pr-3 border-r border-outline-variant/20':i===3?'col-span-3 pr-3 border-r border-outline-variant/20':i===4?'col-span-2 pr-3 border-r border-outline-variant/20':'col-span-1'}`}>{h}</div>
+                  ))}
+                </div>
 
-              {contributions.map((c, idx) => (
-                <div key={c._id} className={`grid grid-cols-1 md:grid-cols-12 px-5 md:px-6 py-4 items-center border-b border-outline-variant/10 gap-2 md:gap-0 group transition-colors ${idx%2===0?'bg-white':'bg-surface-variant/10'} hover:bg-secondary/5`}>
-                  {/* Mobile layout - Column style with headings */}
-                  <div className="md:hidden space-y-3">
-                    <div className="flex justify-between items-start pb-2 border-b border-outline-variant/20">
-                      <div className="flex-1">
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Guest Name</p>
-                        <p className="font-display font-bold text-primary text-base">
-                          {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button onClick={()=>openEdit(c)} className="p-1.5 text-secondary hover:bg-secondary/10 transition-colors">
-                          <span className="material-symbols-outlined text-base">edit</span>
-                        </button>
-                        <button onClick={()=>handleDelete(c._id)} className="p-1.5 text-error/60 hover:text-error hover:bg-error/10 transition-colors">
-                          <span className="material-symbols-outlined text-base">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {c.village && (
-                      <div>
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Village</p>
-                        <p className="font-label text-sm text-on-surface">
-                          {lang === 'ta' ? (c.villageTamil || c.village) : c.village}
-                        </p>
-                      </div>
-                    )}
-                    
-                    {c.guestRelation && (
-                      <div>
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Relation</p>
-                        <p className="font-label text-sm text-on-surface">{c.guestRelation}</p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Amount/Item</p>
-                      {c.giftType==='cash'
-                        ? <p className="font-display font-bold text-primary text-lg">{fmt(c.amount)}</p>
-                        : <div>
-                            <p className="font-display font-bold text-primary">{c.giftDescription || GIFT_LABEL[c.giftType]}</p>
-                            {c.amount > 0 && <p className="font-label text-xs text-on-surface-variant">~{fmt(c.amount)}</p>}
-                          </div>
-                      }
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Type</p>
-                        <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-1">
-                          <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
-                          {GIFT_LABEL[c.giftType]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Date</p>
-                        <p className="font-label text-[10px] text-on-surface-variant">
-                          {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {c.notes && (
-                      <div>
-                        <p className="font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest mb-1">Notes</p>
-                        <p className="font-serif text-xs text-on-surface-variant italic">{c.notes}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Desktop layout */}
-                  <div className="hidden md:block col-span-2">
-                    <p className="font-display font-bold text-primary text-base">
+                {/* Table body - Scrollable when more than 6 rows */}
+                <div className={contributions.length > 6 ? 'overflow-y-auto' : ''} style={{maxHeight: contributions.length > 6 ? '360px' : 'none'}}>
+                  {contributions.map((c, idx) => (
+                <div key={c._id} className={`grid grid-cols-12 px-6 py-4 items-center border-b border-outline-variant/10 gap-3 group transition-colors ${idx%2===0?'bg-white':'bg-surface-variant/10'} hover:bg-secondary/5`}>
+                  {/* Guest Name */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
+                    <p className="font-display font-bold text-primary text-sm leading-tight break-words">
                       {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
                     </p>
-                    {c.notes && <p className="font-serif text-xs text-on-surface-variant italic mt-1">{c.notes}</p>}
                   </div>
-                  <div className="hidden md:block col-span-2">
+                  
+                  {/* Village */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
                     {c.village ? (
-                      <p className="font-label text-sm text-on-surface">
+                      <p className="font-label font-semibold text-xs text-on-surface leading-tight break-words">
                         {lang === 'ta' ? (c.villageTamil || c.village) : c.village}
                       </p>
                     ) : (
                       <span className="text-on-surface-variant text-xs">—</span>
                     )}
                   </div>
-                  <div className="hidden md:block col-span-2 font-label text-xs text-on-surface-variant">{c.guestRelation||'—'}</div>
-                  <div className="hidden md:block col-span-3">
+                  
+                  {/* Relation */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20 font-label font-bold text-xs text-on-surface leading-tight break-words">
+                    {c.guestRelation ? (lang === 'ta' ? (c.relationTamil || c.guestRelation) : c.guestRelation) : '—'}
+                  </div>
+                  
+                  {/* Amount/Item */}
+                  <div className="col-span-3 pr-3 border-r border-outline-variant/20">
                     {c.giftType==='cash'
-                      ? <p className="font-display font-bold text-primary text-lg">{fmt(c.amount)}</p>
+                      ? <p className="font-display font-bold text-primary text-lg leading-tight">{fmt(c.amount)}</p>
                       : <div>
-                          <p className="font-display font-bold text-primary">{c.giftDescription || GIFT_LABEL[c.giftType]}</p>
+                          <p className="font-display font-bold text-primary text-sm leading-tight break-words">{c.giftDescription || GIFT_LABEL[c.giftType]}</p>
                           {c.amount > 0 && <p className="font-label text-xs text-on-surface-variant">~{fmt(c.amount)}</p>}
                         </div>
                     }
                   </div>
-                  <div className="hidden md:block col-span-2">
+                  
+                  {/* Type */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
                     <span className="inline-flex items-center gap-1 text-[9px] font-label font-bold uppercase tracking-wider text-secondary border border-secondary/30 px-2 py-1">
                       <span className="material-symbols-outlined text-xs">{GIFT_ICON[c.giftType]}</span>
-                      {GIFT_LABEL[c.giftType]}
+                      <span className="hidden md:inline">{GIFT_LABEL[c.giftType]}</span>
                     </span>
                   </div>
-                  <div className="hidden md:flex col-span-1 justify-between items-center">
-                    <p className="font-label text-[10px] text-on-surface-variant">
+                  
+                  {/* Date + Actions */}
+                  <div className="col-span-1 flex flex-col md:flex-row justify-between items-start md:items-center gap-1">
+                    <p className="font-label font-semibold text-[10px] text-on-surface-variant leading-tight">
                       {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short'})}
                     </p>
                     <div className="flex gap-1">
@@ -509,16 +505,15 @@ export default function EntryWorkspace() {
                   </div>
                 </div>
               ))}
+                </div>
+              </div>
 
-              {/* Total + CTA row */}
-              <div className="grid grid-cols-1 md:grid-cols-12 px-6 py-5 bg-primary items-center gap-2">
-                <div className="md:col-span-3 font-headline font-bold text-white text-sm uppercase tracking-widest">Grand Total</div>
-                <div className="md:col-span-3 font-display font-bold text-accent text-2xl">{fmt(fn?.totalContributions||0)}</div>
-                <div className="md:col-span-6 md:text-right flex items-center md:justify-end gap-4">
-                  <span className="font-label text-[10px] text-white/50 uppercase tracking-wider">{contributions.length} Entries</span>
-                  <Link to={`/reports?fn=${id}`} className="font-label text-[10px] text-white/70 hover:text-accent uppercase tracking-widest transition-colors inline-flex items-center gap-1.5 border border-white/20 px-4 py-2 hover:border-accent">
-                    <span className="material-symbols-outlined text-sm">description</span>Generate Report
-                  </Link>
+              {/* Total row - Fixed at bottom */}
+              <div className="grid grid-cols-12 px-6 py-5 bg-primary items-center gap-0">
+                <div className="col-span-6 md:col-span-4 font-headline font-bold text-white text-sm uppercase tracking-widest">Grand Total</div>
+                <div className="col-span-6 md:col-span-3 font-display font-bold text-accent text-base">{fmt(cashTotal)}</div>
+                <div className="col-span-12 md:col-span-5 flex items-center justify-start md:justify-end">
+                  <span className="font-label text-[10px] text-white/50 uppercase tracking-wider font-semibold">{contributions.length} Entries</span>
                 </div>
               </div>
             </>

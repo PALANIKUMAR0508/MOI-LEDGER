@@ -10,7 +10,7 @@ const GIFT_LABEL = { cash:'Cash', gold:'Gold', gift:'Gift', other:'Other' };
 
 export default function SummaryReports() {
   const [searchParams] = useSearchParams();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const [functions, setFunctions] = useState([]);
   const [selectedFn, setSelectedFn] = useState(searchParams.get('fn') || '');
   const [fn, setFn] = useState(null);
@@ -31,19 +31,33 @@ export default function SummaryReports() {
     Promise.all([
       axios.get(`${API_URL}/functions/${selectedFn}`),
       axios.get(`${API_URL}/contributions/function/${selectedFn}`),
-    ]).then(([fnR, cR]) => { setFn(fnR.data); setContributions(cR.data); })
+    ]).then(([fnR, cR]) => { 
+      setFn(fnR.data); 
+      // Sort contributions in ascending order (oldest first, newest last)
+      const sortedContributions = cR.data.sort((a, b) => new Date(a.recordedAt) - new Date(b.recordedAt));
+      setContributions(sortedContributions);
+    })
     .catch(() => toast.error('Failed to load report'))
     .finally(() => setLoading(false));
   }, [selectedFn]);
 
   const fmt = (n) => `₹${Number(n||0).toLocaleString('en-IN')}`;
   const cash = contributions.filter(c=>c.giftType==='cash').reduce((s,c)=>s+c.amount,0);
+  const goldEstimated = contributions.filter(c=>c.giftType==='gold').reduce((s,c)=>s+c.amount,0);
+  const giftEstimated = contributions.filter(c=>c.giftType==='gift').reduce((s,c)=>s+c.amount,0);
+  const otherEstimated = contributions.filter(c=>c.giftType==='other').reduce((s,c)=>s+c.amount,0);
   const gold = contributions.filter(c=>c.giftType==='gold').length;
   const gifts = contributions.filter(c=>c.giftType==='gift').length;
   const others = contributions.filter(c=>c.giftType==='other').length;
 
   const handleExportPDF = () => {
     if (!fn) return;
+    
+    // Calculate estimated values
+    const goldEstimated = contributions.filter(c=>c.giftType==='gold').reduce((s,c)=>s+c.amount,0);
+    const giftEstimated = contributions.filter(c=>c.giftType==='gift').reduce((s,c)=>s+c.amount,0);
+    const otherEstimated = contributions.filter(c=>c.giftType==='other').reduce((s,c)=>s+c.amount,0);
+    
     const printContent = reportRef.current?.innerHTML;
     if (!printContent) return;
     const w = window.open('', '_blank');
@@ -51,33 +65,35 @@ export default function SummaryReports() {
       <!DOCTYPE html><html><head>
       <title>MOI Ledger — ${fn.name}</title>
       <link rel="preconnect" href="https://fonts.googleapis.com"/>
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;500;600;700&family=Cinzel:wght@400;700&display=swap" rel="stylesheet"/>
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;500;600;700&family=Cinzel:wght@400;700&family=Lato:wght@400;600;700&display=swap" rel="stylesheet"/>
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:'Montserrat',sans-serif;background:#fff;color:#2C241E;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
         .report-header{background:#4A3728;padding:2rem;color:white;}
         .report-header h1{font-family:'Cinzel',serif;font-size:1.6rem;letter-spacing:0.1em;color:#E8D5A5;margin-bottom:0.5rem;}
         .report-meta{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:0.25rem;}
-        .report-total-big{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:#C5A059;}
+        .report-total-big{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:#C5A059;}
         .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #E5DCC3;}
         .stat-cell{padding:1rem 1.5rem;border-right:1px solid #E5DCC3;}
         .stat-cell:last-child{border-right:none;}
-        .stat-value{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#4A3728;}
+        .stat-value{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#4A3728;}
         .stat-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#6D5F52;margin-top:0.2rem;}
-        .table-header{display:grid;grid-template-columns:2rem 1fr 120px 90px 90px 80px;gap:8px;padding:0.6rem 1.5rem;background:#F5F2E0;border-bottom:1px solid #E5DCC3;}
-        .table-row{display:grid;grid-template-columns:2rem 1fr 120px 90px 90px 80px;gap:8px;padding:0.7rem 1.5rem;border-bottom:1px solid rgba(229,220,195,0.3);}
+        .table-header{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.5rem 1rem;background:#F5F2E0;border-bottom:1px solid #E5DCC3;}
+        .table-row{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.6rem 1rem;border-bottom:1px solid rgba(229,220,195,0.3);align-items:center;}
         .table-row:nth-child(even){background:#FDFCF0;}
         .th{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6D5F52;}
-        .td-name{font-family:'Playfair Display',serif;font-weight:700;color:#4A3728;}
-        .td-amt{font-family:'Playfair Display',serif;font-weight:700;color:#4A3728;}
+        .td-name{font-family:'Playfair Display',serif;font-weight:700;color:#4A3728;font-size:0.85rem;word-wrap:break-word;overflow-wrap:break-word;}
+        .td-village{font-size:0.7rem;color:#4A3728;font-weight:600;word-wrap:break-word;overflow-wrap:break-word;}
+        .td-relation{font-size:0.65rem;color:#4A3728;font-weight:700;word-wrap:break-word;overflow-wrap:break-word;}
+        .td-amt{font-family:'Playfair Display',serif;font-weight:900;color:#4A3728;font-size:1.4rem;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
         .td-type{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#C5A059;}
         .td-small{font-size:0.7rem;color:#6D5F52;}
-        .table-footer{display:grid;grid-template-columns:2rem 1fr 120px 90px 90px 80px;gap:8px;padding:1rem 1.5rem;background:#4A3728;}
-        .tf-label{font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:white;grid-column:1/3;}
-        .tf-total{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:#C5A059;}
+        .table-footer{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.8rem 1rem;background:#4A3728;align-items:center;}
+        .tf-label{font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:white;grid-column:1/5;}
+        .tf-total{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#C5A059;grid-column:5;}
         .report-footer{padding:1.5rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E5DCC3;margin-top:1rem;}
         .rf-brand{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#4A3728;}
-        .rf-date{font-family:'Playfair Display',serif;font-style:italic;color:#4A3728;font-size:0.85rem;}
+        .rf-date{font-family:'Lato',sans-serif;font-weight:600;color:#6D5F52;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;}
         @media print{@page{size:A4;margin:1cm;}}
       </style>
       </head><body>
@@ -89,36 +105,37 @@ export default function SummaryReports() {
             <div class="report-meta">${new Date(fn.date).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}${fn.venue ? ' · ' + fn.venue : ''}</div>
           </div>
           <div style="text-align:right;">
-            <div class="report-total-big">${fmt(fn.totalContributions)}</div>
+            <div class="report-total-big">${fmt(cash)}</div>
             <div class="report-meta">${contributions.length} Guests</div>
           </div>
         </div>
       </div>
       <div class="stats-bar">
         <div class="stat-cell"><div class="stat-value">${fmt(cash)}</div><div class="stat-label">Cash</div></div>
-        <div class="stat-cell"><div class="stat-value">${gold}</div><div class="stat-label">Gold Items</div></div>
-        <div class="stat-cell"><div class="stat-value">${gifts}</div><div class="stat-label">Gift Items</div></div>
-        <div class="stat-cell"><div class="stat-value">${others}</div><div class="stat-label">Other</div></div>
+        <div class="stat-cell"><div class="stat-value">${gold}</div><div class="stat-label">Gold Items</div>${goldEstimated > 0 ? `<div style="font-size:0.6rem;color:#6D5F52;margin-top:0.2rem;">Est: ${fmt(goldEstimated)}</div>` : ''}</div>
+        <div class="stat-cell"><div class="stat-value">${gifts}</div><div class="stat-label">Gift Items</div>${giftEstimated > 0 ? `<div style="font-size:0.6rem;color:#6D5F52;margin-top:0.2rem;">Est: ${fmt(giftEstimated)}</div>` : ''}</div>
+        <div class="stat-cell"><div class="stat-value">${others}</div><div class="stat-label">Other</div>${otherEstimated > 0 ? `<div style="font-size:0.6rem;color:#6D5F52;margin-top:0.2rem;">Est: ${fmt(otherEstimated)}</div>` : ''}</div>
       </div>
       <div style="padding:1.5rem;">
         <div class="table-header">
-          <div class="th">#</div><div class="th">Guest Name</div><div class="th">Relation</div>
+          <div class="th">#</div><div class="th">Guest Name</div><div class="th">Village</div><div class="th">Relation</div>
           <div class="th">Amount/Item</div><div class="th">Type</div><div class="th">Date</div>
         </div>
         ${contributions.map((c,i)=>`
           <div class="table-row">
             <div class="td-small">${i+1}</div>
             <div class="td-name">${c.guestName}</div>
-            <div class="td-small">${c.guestRelation||'—'}</div>
-            <div class="td-amt">${c.giftType==='cash' ? fmt(c.amount) : (c.giftDescription||GIFT_LABEL[c.giftType])}</div>
+            <div class="td-village">${c.village||'—'}</div>
+            <div class="td-relation">${c.guestRelation||'—'}</div>
+            <div class="td-amt">${c.giftType==='cash' ? fmt(c.amount) : `${c.giftDescription||GIFT_LABEL[c.giftType]}${c.amount > 0 ? ` <span style="font-size:0.65rem;color:#6D5F52;">(~${fmt(c.amount)})</span>` : ''}`}</div>
             <div class="td-type">${GIFT_LABEL[c.giftType]||c.giftType}</div>
             <div class="td-small">${new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
           </div>
         `).join('')}
         <div class="table-footer">
           <div class="tf-label">Grand Total</div>
-          <div class="tf-total" style="grid-column:3;">${fmt(fn.totalContributions)}</div>
-          <div style="grid-column:4/7;text-align:right;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);">${contributions.length} Guests</div>
+          <div class="tf-total">${fmt(cash)}</div>
+          <div style="grid-column:6/8;text-align:right;font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.4);">${contributions.length} Guests</div>
         </div>
       </div>
       <div class="report-footer">
@@ -138,7 +155,7 @@ export default function SummaryReports() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
             <p className="font-label text-[10px] uppercase tracking-[0.4em] text-secondary mb-2 font-bold">{t.archiveBureau}</p>
-            <h1 className="font-headline text-3xl md:text-4xl font-bold text-primary tracking-widest uppercase">{t.summaryReports}</h1>
+            <h1 className="font-headline text-4xl font-bold text-primary tracking-widest uppercase">{t.summaryReports}</h1>
             <p className="font-serif text-on-surface-variant italic mt-2">{t.beautifullyFormatted}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -180,7 +197,7 @@ export default function SummaryReports() {
               <div className="relative z-10 flex flex-col md:flex-row items-start justify-between gap-6">
                 <div>
                   <p className="font-label text-[10px] uppercase tracking-[0.4em] text-accent mb-3 font-bold">{t.officialReport}</p>
-                  <h2 className="font-headline text-3xl md:text-4xl font-bold text-white mb-3 leading-tight">{fn.name}</h2>
+                  <h2 className="font-headline text-4xl font-bold text-white mb-3 leading-tight">{fn.name}</h2>
                   <div className="flex flex-wrap gap-4 text-white/60 font-label text-[10px] uppercase tracking-widest">
                     <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">calendar_month</span>{new Date(fn.date).toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'})}</span>
                     {fn.venue && <span className="flex items-center gap-1.5"><span className="material-symbols-outlined text-sm">location_on</span>{fn.venue}</span>}
@@ -188,8 +205,8 @@ export default function SummaryReports() {
                   </div>
                 </div>
                 <div className="text-right md:shrink-0">
-                  <div className=" text-accent text-4xl md:text-5xl font-bold">{fmt(fn.totalContributions)}</div>
-                  <p className="font-label text-[10px] text-white/50 uppercase tracking-widest mt-1">{t.totalCollected}</p>
+                  <div className=" text-accent text-5xl font-bold">{fmt(cash)}</div>
+                  <p className="font-label text-[10px] text-white/50 uppercase tracking-widest mt-1">{t.cashTotal}</p>
                 </div>
               </div>
             </div>
@@ -198,13 +215,14 @@ export default function SummaryReports() {
             <div className="grid grid-cols-2 md:grid-cols-4">
               {[
                 { label:t.cashTotal, value: fmt(cash), icon:'payments' },
-                { label:t.goldItems, value: `${gold} item${gold!==1?'s':''}`, icon:'diamond' },
-                { label:t.giftItems, value: `${gifts} item${gifts!==1?'s':''}`, icon:'card_giftcard' },
-                { label:t.other, value: `${others} item${others!==1?'s':''}`, icon:'category' },
-              ].map(({label,value,icon},i)=>(
+                { label:t.goldItems, value: `${gold} item${gold!==1?'s':''}`, subValue: goldEstimated > 0 ? `Est: ${fmt(goldEstimated)}` : null, icon:'diamond' },
+                { label:t.giftItems, value: `${gifts} item${gifts!==1?'s':''}`, subValue: giftEstimated > 0 ? `Est: ${fmt(giftEstimated)}` : null, icon:'card_giftcard' },
+                { label:t.other, value: `${others} item${others!==1?'s':''}`, subValue: otherEstimated > 0 ? `Est: ${fmt(otherEstimated)}` : null, icon:'category' },
+              ].map(({label,value,subValue,icon},i)=>(
                 <div key={label} className={`p-6 md:p-8 border-b border-outline-variant/20 ${i<3?'border-r border-outline-variant/20':''}${i>=2?'bg-surface-variant/30':'bg-white'}`}>
                   <span className="material-symbols-outlined text-secondary text-xl mb-2 block">{icon}</span>
-                  <p className="font-display text-xl md:text-2xl font-bold text-primary">{value}</p>
+                  <p className="font-display text-2xl font-bold text-primary">{value}</p>
+                  {subValue && <p className="font-label text-[9px] uppercase tracking-wider text-on-surface-variant mt-1">{subValue}</p>}
                   <p className="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">{label}</p>
                 </div>
               ))}
@@ -213,36 +231,67 @@ export default function SummaryReports() {
             {/* Contribution table */}
             <div className="bg-white p-6 md:p-8">
               <h3 className="font-headline text-base font-bold text-primary tracking-widest uppercase mb-6">{t.contributionRegister}</h3>
+              
               {/* Header */}
-              <div className="hidden md:grid grid-cols-12 bg-surface-variant/50 px-5 py-3 border-b border-outline-variant/20 mb-0">
-                {['#',t.guestName,t.relation,t.amountItem,t.type,t.date].map((h,i)=>(
-                  <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-1':i===1?'col-span-3':i===2?'col-span-2':i===3?'col-span-3':i===4?'col-span-1':'col-span-2'}`}>{h}</div>
+              <div className="grid grid-cols-12 bg-surface-variant/50 px-3 md:px-5 py-3 border-b border-outline-variant/20 mb-0 gap-3">
+                {[t.guestName,'Village',t.relation,t.amountItem,t.type,t.date].map((h,i)=>(
+                  <div key={i} className={`font-label text-[9px] font-bold text-on-surface-variant uppercase tracking-widest ${i===0?'col-span-2 pr-3 border-r border-outline-variant/20':i===1?'col-span-2 pr-3 border-r border-outline-variant/20':i===2?'col-span-2 pr-3 border-r border-outline-variant/20':i===3?'col-span-3 pr-3 border-r border-outline-variant/20':i===4?'col-span-2 pr-3 border-r border-outline-variant/20':'col-span-1'}`}>{h}</div>
                 ))}
               </div>
+              
               {contributions.map((c,idx)=>(
-                <div key={c._id} className={`grid grid-cols-1 md:grid-cols-12 px-5 py-4 items-center border-b border-outline-variant/10 ${idx%2===0?'bg-white':'bg-surface-variant/20'}`}>
-                  <div className="hidden md:block col-span-1 font-label text-[10px] text-on-surface-variant/50 font-bold">{idx+1}</div>
-                  <div className="md:col-span-3"><p className="font-display font-bold text-primary text-base">{c.guestName}</p></div>
-                  <div className="hidden md:block col-span-2 font-label text-xs text-on-surface-variant">{c.guestRelation||'—'}</div>
-                  <div className="md:col-span-3">
+                <div key={c._id} className={`grid grid-cols-12 px-3 md:px-5 py-3 md:py-4 items-center border-b border-outline-variant/10 gap-3 ${idx%2===0?'bg-white':'bg-surface-variant/20'}`}>
+                  {/* Guest Name */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
+                    <p className="font-display font-bold text-primary text-sm leading-tight break-words">
+                      {lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}
+                    </p>
+                  </div>
+                  
+                  {/* Village */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
+                    <p className="font-label font-semibold text-xs text-on-surface leading-tight break-words">
+                      {c.village ? (lang === 'ta' ? (c.villageTamil || c.village) : c.village) : '—'}
+                    </p>
+                  </div>
+                  
+                  {/* Relation */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20 font-label font-bold text-xs text-on-surface leading-tight break-words">
+                    {c.guestRelation ? (lang === 'ta' ? (c.relationTamil || c.guestRelation) : c.guestRelation) : '—'}
+                  </div>
+                  
+                  {/* Amount/Item */}
+                  <div className="col-span-3 pr-3 border-r border-outline-variant/20">
                     {c.giftType==='cash'
-                      ? <p className="font-display font-bold text-primary text-lg">{fmt(c.amount)}</p>
-                      : <div><p className="font-display font-bold text-primary">{c.giftDescription||GIFT_LABEL[c.giftType]}</p>{c.amount>0&&<p className="font-label text-xs text-on-surface-variant">~{fmt(c.amount)}</p>}</div>
+                      ? <p className="font-display font-black text-primary text-lg leading-tight">{fmt(c.amount)}</p>
+                      : <div>
+                          <p className="font-display font-bold text-primary text-sm leading-tight break-words">{c.giftDescription||GIFT_LABEL[c.giftType]}</p>
+                          {c.amount>0&&<p className="font-label text-xs text-on-surface-variant">~{fmt(c.amount)}</p>}
+                        </div>
                     }
                   </div>
-                  <div className="hidden md:block col-span-1">
-                    <span className="font-label text-[9px] font-bold uppercase tracking-wider text-secondary border border-secondary/20 px-2 py-0.5">{GIFT_LABEL[c.giftType]}</span>
+                  
+                  {/* Type */}
+                  <div className="col-span-2 pr-3 border-r border-outline-variant/20">
+                    <span className="inline-flex items-center gap-1 font-label text-[9px] font-bold uppercase tracking-wider text-secondary border border-secondary/20 px-2 py-0.5">
+                      {GIFT_LABEL[c.giftType]}
+                    </span>
                   </div>
-                  <div className="hidden md:block col-span-2 font-label text-[10px] text-on-surface-variant">
+                  
+                  {/* Date */}
+                  <div className="col-span-1 font-label text-[10px] text-on-surface-variant leading-tight">
                     {new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
                   </div>
                 </div>
               ))}
+              
               {/* Total */}
-              <div className="grid grid-cols-1 md:grid-cols-12 px-5 py-5 bg-primary items-center gap-2">
-                <div className="md:col-span-4 font-headline font-bold text-white text-sm uppercase tracking-widest">{t.grandTotal}</div>
-                <div className="md:col-span-3 font-display font-bold text-accent text-2xl">{fmt(fn.totalContributions)}</div>
-                <div className="md:col-span-5 md:text-right font-label text-[10px] text-white/40 uppercase tracking-widest">{contributions.length} {t.guestsRecorded}</div>
+              <div className="grid grid-cols-12 px-3 md:px-5 py-4 md:py-5 bg-primary items-center gap-1 md:gap-0">
+                <div className="col-span-6 md:col-span-4 font-headline font-bold text-white text-sm uppercase tracking-widest">{t.grandTotal}</div>
+                <div className="col-span-6 md:col-span-3 font-display font-bold text-accent text-base">{fmt(cash)}</div>
+                <div className="col-span-12 md:col-span-5 flex items-center justify-start md:justify-end">
+                  <span className="font-label text-[10px] text-white/50 uppercase tracking-wider font-semibold">{contributions.length} {t.guestsRecorded}</span>
+                </div>
               </div>
             </div>
 

@@ -9,6 +9,7 @@ const ContributionSchema = new mongoose.Schema({
   village: { type: String },
   villageTamil: { type: String },
   guestRelation: { type: String },
+  relationTamil: { type: String },
   amount: { type: Number, required: true },
   giftType: { type: String, enum: ['cash', 'gold', 'gift', 'other'], default: 'cash' },
   giftDescription: { type: String },
