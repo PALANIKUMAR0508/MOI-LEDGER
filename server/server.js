@@ -57,12 +57,13 @@ app.get('/api/test', (req, res) => {
 app.get('/api/debug/user/:email', async (req, res) => {
   try {
     const User = require('./models/User');
-    const user = await User.findOne({ email: req.params.email });
+    const email = req.params.email.trim().toLowerCase();
+    const user = await User.findOne({ email });
     if (!user) {
       return res.json({ 
         found: false, 
         message: 'User not found',
-        email: req.params.email 
+        searchedEmail: email 
       });
     }
     res.json({ 
@@ -70,10 +71,47 @@ app.get('/api/debug/user/:email', async (req, res) => {
       userId: user._id,
       username: user.username,
       email: user.email,
+      emailNeedsNormalization: user.email !== email,
       hasPassword: !!user.password,
       passwordLength: user.password?.length,
       passwordStartsWith: user.password?.substring(0, 7), // bcrypt hashes start with $2a$ or $2b$
       createdAt: user.createdAt
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Debug endpoint to test password (REMOVE IN PRODUCTION)
+app.post('/api/debug/test-password', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const User = require('./models/User');
+    const { email, password } = req.body;
+    
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedPassword = password.trim();
+    
+    const user = await User.findOne({ email: normalizedEmail });
+    if (!user) {
+      return res.json({ 
+        found: false,
+        searchedEmail: normalizedEmail
+      });
+    }
+    
+    const isMatch = await bcrypt.compare(normalizedPassword, user.password);
+    
+    res.json({
+      found: true,
+      userId: user._id,
+      email: user.email,
+      inputEmail: normalizedEmail,
+      emailsMatch: user.email === normalizedEmail,
+      inputPasswordLength: normalizedPassword.length,
+      storedPasswordLength: user.password.length,
+      passwordMatch: isMatch,
+      storedPasswordStartsWith: user.password.substring(0, 7)
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
