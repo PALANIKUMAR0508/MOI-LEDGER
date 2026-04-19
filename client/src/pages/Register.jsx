@@ -65,7 +65,7 @@ export default function Register() {
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 overflow-hidden royal-shadow border border-outline-variant/20">
           {/* Left: Image */}
           <div className="relative hidden md:block overflow-hidden min-h-[620px]">
-            <img src="/src/assets/images/Marriage.png" alt="MOI Ledger - Contribution Management" className="absolute inset-0 w-full h-full object-cover"/>
+            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80" alt="MOI Ledger - Contribution Management" className="absolute inset-0 w-full h-full object-cover"/>
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/90 via-primary/40 to-transparent"/>
             <div className="absolute bottom-12 left-10 right-10 z-10">
               <h1 className="font-headline text-3xl font-extrabold text-accent tracking-[0.15em] mb-3">MOI Ledger</h1>
