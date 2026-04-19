@@ -7,23 +7,74 @@ import { API_URL } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const CATEGORY_IMAGES = {
-  marriage:     'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80',
-  engagement:   'https://images.unsplash.com/photo-1606800052052-a08af7148866?w=600&q=80',
-  reception:    'https://images.unsplash.com/photo-1519167758481-83f29da8c2b0?w=600&q=80',
-  nalangu:      'https://images.unsplash.com/photo-1583391733956-6c78276477e2?w=600&q=80',
-  valaikappu:   'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
-  naming:       'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=600&q=80',
-  earPiercing:  'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
-  birthday1st:  'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
-  birthday:     'https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=600&q=80',
-  puberty:      'https://images.unsplash.com/photo-1561049501-e1f96bdd98fd?w=600&q=80',
-  sathabhisekam:'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80',
-  bheemaRatha:  'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80',
-  achievement:  'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&q=80',
-  houseWarming: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=600&q=80',
-  shopOpening:  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80',
-  templeEvent:  'https://images.unsplash.com/photo-1548013146-72479768bada?w=600&q=80',
-  other:        'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80',
+
+  // திருமணம் — Tamil wedding, flowers, couple
+  marriage:
+    'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600&q=80',
+
+  // நிச்சயதார்த்தம் — engagement ring, hands
+  engagement:
+    'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=600&q=80',
+
+  // ரிசப்ஷன் — wedding reception hall, lights, decor
+  reception:
+    'https://images.unsplash.com/photo-1519167758481-83f29da8c2b0?w=600&q=80',
+
+  // நாளங்கு — turmeric, traditional ritual, flowers
+  nalangu:
+    'https://images.unsplash.com/photo-1601206853304-5640cc21b2c8?w=600&q=80',
+
+  // வளைக்காப்பு — bangles, baby shower, pregnant
+  valaikappu:
+    'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
+
+  // பெயர் சூட்டும் — newborn baby, naming
+  naming:
+    'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=600&q=80',
+
+  // காது குத்துதல் — baby/child closeup, gentle
+  earPiercing:
+    'https://images.unsplash.com/photo-1492725764893-90b379c2b6e7?w=600&q=80',
+
+  // முதல் பிறந்தநாள் — baby with cake, 1st birthday
+  birthday1st:
+    'https://images.unsplash.com/photo-1558636508-e0969431e467?w=600&q=80',
+
+  // பிறந்தநாள் — birthday cake, candles, celebration
+  birthday:
+    'https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=600&q=80',
+
+  // மஞ்சள் நீராட்டு — flowers, traditional, yellow/turmeric
+  puberty:
+    'https://images.unsplash.com/photo-1601206853304-5640cc21b2c8?w=600&q=80',
+
+  // சதாபிஷேகம் — elderly couple, 60th anniversary
+  sathabhisekam:
+    'https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=600&q=80',
+
+  // பீமரத சாந்தி — elderly celebration, 70th
+  bheemaRatha:
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=600&q=80',
+
+  // கல்வி சாதனை — graduation, achievement, degree
+  achievement:
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&q=80',
+
+  // கிரகப்பிரவேசம் — new house, door, keys, home
+  houseWarming:
+    'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=600&q=80',
+
+  // கடை திறப்பு — shop front, store opening, ribbon
+  shopOpening:
+    'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80',
+
+  // கும்பாபிஷேகம் — temple, lamps, diyas, pooja
+  templeEvent:
+    'https://images.unsplash.com/photo-1583470790871-eef82bdf9b4c?w=600&q=80',
+
+  // மற்றவை — general celebration
+  other:
+    'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80',
 };
 
 const CATEGORY_ICONS = {
