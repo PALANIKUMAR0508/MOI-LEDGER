@@ -14,10 +14,17 @@ export default function SignIn() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(form.email, form.password);
+      // Trim and normalize inputs - MUST match registration
+      const cleanEmail = form.email.trim().toLowerCase();
+      const cleanPassword = form.password.trim();
+      
+      console.log('Logging in with:', { email: cleanEmail, passwordLength: cleanPassword.length });
+      
+      await login(cleanEmail, cleanPassword);
       toast.success('Welcome back, Archivist.');
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err);
       toast.error(err.response?.data?.message || 'Authentication failed');
     } finally { setLoading(false); }
   };

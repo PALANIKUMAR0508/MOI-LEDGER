@@ -10,7 +10,13 @@ router.post('/register', async (req, res) => {
   try {
     console.log('Registration attempt:', { username: req.body.username, email: req.body.email });
     
-    const { username, email, password } = req.body;
+    let { username, email, password } = req.body;
+    
+    // Trim and normalize inputs
+    username = username?.trim();
+    email = email?.trim().toLowerCase();
+    password = password?.trim();
+    
     if (!username || !email || !password) {
       console.log('Registration failed: Missing fields');
       return res.status(400).json({ message: 'All fields are required' });
@@ -22,7 +28,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    console.log('Hashing password with length:', password.length);
     const hashed = await bcrypt.hash(password, 12);
+    console.log('Password hashed, length:', hashed.length, 'starts with:', hashed.substring(0, 7));
+    
     const user = new User({ username, email, password: hashed });
     await user.save();
     
@@ -41,7 +50,11 @@ router.post('/login', async (req, res) => {
   try {
     console.log('Login attempt:', { email: req.body.email });
     
-    const { email, password } = req.body;
+    let { email, password } = req.body;
+    
+    // Trim and normalize inputs - MUST match registration
+    email = email?.trim().toLowerCase();
+    password = password?.trim();
     
     if (!email || !password) {
       console.log('Login failed: Missing email or password');
@@ -56,6 +69,7 @@ router.post('/login', async (req, res) => {
     
     console.log('User found:', { id: user._id, email: user.email, hasPassword: !!user.password });
     console.log('Stored password hash length:', user.password?.length);
+    console.log('Stored password starts with:', user.password?.substring(0, 7));
     console.log('Input password length:', password?.length);
 
     const isMatch = await bcrypt.compare(password, user.password);

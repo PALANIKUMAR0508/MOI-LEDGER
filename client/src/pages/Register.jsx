@@ -38,7 +38,14 @@ export default function Register() {
     if (form.username.length < 3) return toast.error('Username must be at least 3 characters.');
     setLoading(true);
     try {
-      await register(form.username, form.email, form.password);
+      // Trim and normalize inputs
+      const cleanUsername = form.username.trim();
+      const cleanEmail = form.email.trim().toLowerCase();
+      const cleanPassword = form.password.trim();
+      
+      console.log('Registering with:', { username: cleanUsername, email: cleanEmail, passwordLength: cleanPassword.length });
+      
+      await register(cleanUsername, cleanEmail, cleanPassword);
       toast.success('Welcome to the Grand Ledger.');
       navigate('/dashboard');
     } catch (err) {
@@ -58,7 +65,7 @@ export default function Register() {
         <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 overflow-hidden royal-shadow border border-outline-variant/20">
           {/* Left: Image */}
           <div className="relative hidden md:block overflow-hidden min-h-[620px]">
-            <img src="https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=800&q=80" alt="Ceremonial" className="absolute inset-0 w-full h-full object-cover"/>
+            <img src="/src/assets/images/Marriage.png" alt="MOI Ledger - Contribution Management" className="absolute inset-0 w-full h-full object-cover"/>
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/90 via-primary/40 to-transparent"/>
             <div className="absolute bottom-12 left-10 right-10 z-10">
               <h1 className="font-headline text-3xl font-extrabold text-accent tracking-[0.15em] mb-3">MOI Ledger</h1>
