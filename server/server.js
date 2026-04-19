@@ -5,13 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
-// CORS configuration for Vercel frontend
+// CORS configuration - Only Vercel frontend
 const corsOptions = {
   origin: [
-    'https://moi-ledger-esg3.vercel.app',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:3000'
+    'https://moi-ledger-esg3.vercel.app'
   ],
   credentials: true,
   optionsSuccessStatus: 200
