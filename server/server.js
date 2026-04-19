@@ -205,6 +205,8 @@ console.log('MONGO_URI:', MONGO_URI ? 'Set (hidden)' : 'NOT SET');
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('✓ MongoDB connected successfully');
+    console.log('✓ Database name:', mongoose.connection.name);
+    console.log('✓ Connection state:', mongoose.connection.readyState);
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`✓ Server running on port ${PORT}`);
       console.log(`✓ Health check available at http://localhost:${PORT}/health`);

@@ -33,7 +33,21 @@ router.post('/register', async (req, res) => {
     console.log('Password hashed, length:', hashed.length, 'starts with:', hashed.substring(0, 7));
     
     const user = new User({ username, email, password: hashed });
+    console.log('Created user object:', { username: user.username, email: user.email, hasPassword: !!user.password });
+    
     await user.save();
+    console.log('✓ User saved to database successfully!');
+    console.log('✓ User ID:', user._id);
+    console.log('✓ Database:', mongoose.connection.name);
+    console.log('✓ Collection: users');
+    
+    // Verify user was actually saved
+    const savedUser = await User.findById(user._id);
+    if (savedUser) {
+      console.log('✓ Verified: User exists in database');
+    } else {
+      console.error('✗ WARNING: User not found after save!');
+    }
     
     console.log('User registered successfully:', user._id);
 
