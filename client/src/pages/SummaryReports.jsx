@@ -68,32 +68,32 @@ export default function SummaryReports() {
       <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@400;500;600;700&family=Cinzel:wght@400;700&family=Lato:wght@400;600;700&display=swap" rel="stylesheet"/>
       <style>
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{font-family:'Montserrat',sans-serif;background:#fff;color:#2C241E;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
-        .report-header{background:#4A3728;padding:2rem;color:white;}
-        .report-header h1{font-family:'Cinzel',serif;font-size:1.6rem;letter-spacing:0.1em;color:#E8D5A5;margin-bottom:0.5rem;}
-        .report-meta{font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:0.25rem;}
-        .report-total-big{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:900;color:#C5A059;}
+        body{font-family:'Montserrat',sans-serif;background:#fff;color:#2C241E;-webkit-print-color-adjust:exact;print-color-adjust:exact;font-size:0.85rem;}
+        .report-header{background:#4A3728;padding:1.5rem 2rem;color:white;}
+        .report-header h1{font-family:'Cinzel',serif;font-size:1.4rem;letter-spacing:0.08em;color:#E8D5A5;margin-bottom:0.4rem;font-weight:700;}
+        .report-meta{font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-top:0.2rem;}
+        .report-total-big{font-family:'Montserrat',sans-serif;font-size:1.8rem;font-weight:800;color:#C5A059;}
         .stats-bar{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid #E5DCC3;}
-        .stat-cell{padding:1rem 1.5rem;border-right:1px solid #E5DCC3;}
+        .stat-cell{padding:0.8rem 1.2rem;border-right:1px solid #E5DCC3;}
         .stat-cell:last-child{border-right:none;}
-        .stat-value{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:900;color:#4A3728;}
-        .stat-label{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.15em;color:#6D5F52;margin-top:0.2rem;}
-        .table-header{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.5rem 1rem;background:#F5F2E0;border-bottom:1px solid #E5DCC3;}
-        .table-row{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.6rem 1rem;border-bottom:1px solid rgba(229,220,195,0.3);align-items:center;}
+        .stat-value{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:700;color:#4A3728;}
+        .stat-label{font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:#6D5F52;margin-top:0.3rem;font-weight:600;}
+        .table-header{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:8px;padding:0.6rem 1.2rem;background:#F5F2E0;border-bottom:1px solid #E5DCC3;}
+        .table-row{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:8px;padding:0.7rem 1.2rem;border-bottom:1px solid rgba(229,220,195,0.3);align-items:center;}
         .table-row:nth-child(even){background:#FDFCF0;}
-        .th{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:#6D5F52;}
-        .td-name{font-family:'Playfair Display',serif;font-weight:700;color:#4A3728;font-size:0.85rem;word-wrap:break-word;overflow-wrap:break-word;}
-        .td-village{font-size:0.7rem;color:#4A3728;font-weight:600;word-wrap:break-word;overflow-wrap:break-word;}
-        .td-relation{font-size:0.65rem;color:#4A3728;font-weight:700;word-wrap:break-word;overflow-wrap:break-word;}
-        .td-amt{font-family:'Playfair Display',serif;font-weight:900;color:#4A3728;font-size:1.4rem;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
-        .td-type{font-size:0.65rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#C5A059;}
-        .td-small{font-size:0.7rem;color:#6D5F52;}
-        .table-footer{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:6px;padding:0.8rem 1rem;background:#4A3728;align-items:center;}
-        .tf-label{font-family:'Cinzel',serif;font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;color:white;grid-column:1/5;}
-        .tf-total{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:900;color:#C5A059;grid-column:5;}
-        .report-footer{padding:1.5rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E5DCC3;margin-top:1rem;}
-        .rf-brand{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:#4A3728;}
-        .rf-date{font-family:'Lato',sans-serif;font-weight:600;color:#6D5F52;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;}
+        .th{font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#6D5F52;}
+        .td-name{font-family:'Montserrat',sans-serif;font-weight:700;color:#2C241E;font-size:0.85rem;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
+        .td-village{font-family:'Montserrat',sans-serif;font-size:0.85rem;color:#2C241E;font-weight:600;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
+        .td-relation{font-family:'Montserrat',sans-serif;font-size:0.85rem;color:#2C241E;font-weight:600;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
+        .td-amt{font-family:'Montserrat',sans-serif;font-weight:700;color:#2C241E;font-size:0.85rem;word-wrap:break-word;overflow-wrap:break-word;line-height:1.3;}
+        .td-type{font-family:'Montserrat',sans-serif;font-size:0.85rem;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#C5A059;}
+        .td-small{font-family:'Montserrat',sans-serif;font-size:0.85rem;color:#2C241E;font-weight:500;}
+        .table-footer{display:grid;grid-template-columns:1.5rem 1.2fr 0.8fr 0.8fr 1.5fr 0.7fr 0.8fr;gap:8px;padding:1rem 1.2rem;background:#4A3728;align-items:center;}
+        .tf-label{font-family:'Montserrat',sans-serif;font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:white;grid-column:1/5;}
+        .tf-total{font-family:'Montserrat',sans-serif;font-size:1.1rem;font-weight:800;color:#C5A059;grid-column:5;}
+        .report-footer{padding:1.2rem 1.5rem;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #E5DCC3;margin-top:0.8rem;}
+        .rf-brand{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#4A3728;font-weight:600;}
+        .rf-date{font-family:'Montserrat',sans-serif;font-weight:600;color:#6D5F52;font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;}
         @media print{@page{size:A4;margin:1cm;}}
       </style>
       </head><body>
@@ -124,10 +124,10 @@ export default function SummaryReports() {
         ${contributions.map((c,i)=>`
           <div class="table-row">
             <div class="td-small">${i+1}</div>
-            <div class="td-name">${c.guestName}</div>
-            <div class="td-village">${c.village||'—'}</div>
-            <div class="td-relation">${c.guestRelation||'—'}</div>
-            <div class="td-amt">${c.giftType==='cash' ? fmt(c.amount) : `${c.giftDescription||GIFT_LABEL[c.giftType]}${c.amount > 0 ? ` <span style="font-size:0.65rem;color:#6D5F52;">(~${fmt(c.amount)})</span>` : ''}`}</div>
+            <div class="td-name">${lang === 'ta' ? (c.guestNameTamil || c.guestName) : (c.guestNameEnglish || c.guestName)}</div>
+            <div class="td-village">${c.village ? (lang === 'ta' ? (c.villageTamil || c.village) : c.village) : '—'}</div>
+            <div class="td-relation">${c.guestRelation ? (lang === 'ta' ? (c.relationTamil || c.guestRelation) : c.guestRelation) : '—'}</div>
+            <div class="td-amt">${c.giftType==='cash' ? fmt(c.amount) : `${c.giftDescription||GIFT_LABEL[c.giftType]}${c.amount > 0 ? ` <span style="font-size:0.7rem;color:#6D5F52;">(~${fmt(c.amount)})</span>` : ''}`}</div>
             <div class="td-type">${GIFT_LABEL[c.giftType]||c.giftType}</div>
             <div class="td-small">${new Date(c.recordedAt).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
           </div>
@@ -139,7 +139,7 @@ export default function SummaryReports() {
         </div>
       </div>
       <div class="report-footer">
-        <div><div class="rf-brand">MOI The Grand Ledger</div><div style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.15em;color:#6D5F52;margin-top:0.2rem;">© 2026 All rights reserved</div></div>
+        <div><div class="rf-brand">MOI The Grand Ledger</div><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:#6D5F52;margin-top:0.3rem;font-weight:500;">© 2026 All rights reserved</div></div>
         <div class="rf-date">Generated: ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'})}</div>
       </div>
       </body></html>

@@ -196,7 +196,11 @@ export default function Landing() {
       {/* Footer */}
       <footer className="w-full border-t border-outline-variant/30 py-10 md:py-16 px-6 md:px-8">
         <div className="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="font-label text-[10px] text-on-surface-variant/50 tracking-[0.2em] uppercase text-center md:text-left">{t.copyright}</p>
+          <p className="font-label text-[10px] text-on-surface-variant/50 tracking-[0.2em] uppercase text-center md:text-left">
+            {t.copyright.split('2026')[0]}
+            <span className="font-display text-xs font-bold">2026</span>
+            {t.copyright.split('2026')[1]}
+          </p>
           <div className="flex flex-wrap justify-center gap-6 md:gap-10">
             {t.footerLinks.map((item,i)=>(
               <Link key={i} to={i===0?'/legal':'#'} className="font-label text-[10px] text-on-surface-variant/50 hover:text-secondary transition-all tracking-[0.2em] uppercase">{item}</Link>
